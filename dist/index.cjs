@@ -77,13 +77,13 @@ async function validateLicenseOnline(key, fingerprint) {
 }
 async function ensureLicensed() {
   const fingerprint = getFingerprint();
-  const key = process.env.CRIXLY_LICENSE_KEY || "";
+  const cache = readCache();
+  const key = (process.env.CRIXLY_LICENSE_KEY || cache?.key || "").trim();
   if (!key) {
-    const err = new Error("Missing license key. Set CRIXLY_LICENSE_KEY then retry.");
-    err.code = "LICENSE_MISSING";
+    const err = new Error("Crixly is not activated. Run: crixly activate <LICENSE_KEY>");
+    err.code = "LICENSE_NOT_ACTIVATED";
     throw err;
   }
-  const cache = readCache();
   const now = Date.now();
   if (cache && cache.key === key && cache.fingerprint === fingerprint && cache.nextCheckAt > now) {
     return;
@@ -132,6 +132,25 @@ program.command("status").description("Show Crixly status").allowUnknownOption(t
 program.command("run").description("Run Crixly (gateway + ui)").allowUnknownOption(true).passThroughOptions().action(async (_, cmd) => {
   await ensureLicensed();
   await runUnderlyingOpenClaw(["gateway", ...cmd.args]);
+});
+program.command("activate").description("Activate this machine with a license key").argument("<key>", "License key").action(async (key) => {
+  const fingerprint = getFingerprint();
+  const spinner = (0, import_ora.default)("Activating Crixly\u2026").start();
+  try {
+    const { nextCheckSeconds } = await validateLicenseOnline(String(key).trim(), fingerprint);
+    const now = Date.now();
+    writeCache({
+      key: String(key).trim(),
+      fingerprint,
+      lastValidatedAt: now,
+      nextCheckAt: now + nextCheckSeconds * 1e3
+    });
+    spinner.succeed("Activated");
+    console.log("Next: crixly run");
+  } catch (e) {
+    spinner.fail(e?.message || "Activation failed");
+    process.exit(1);
+  }
 });
 program.command("license:check").description("Validate license now").action(async () => {
   await ensureLicensed();
