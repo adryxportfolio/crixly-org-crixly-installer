@@ -45,6 +45,20 @@ jobs:
           # Bundle skills from this repo (bundled-skills/) into the same archive.
           tar -czf releases/crixly-bundled-skills.tgz -C bundled-skills .
 
+      - name: Copy into Pages releases directory
+        run: |
+          mkdir -p install/releases
+          cp releases/crixly-runtime-dist.tgz install/releases/crixly-runtime-dist.tgz
+          cp releases/crixly-bundled-skills.tgz install/releases/crixly-bundled-skills.tgz
+
+      - name: Commit published release artifacts
+        run: |
+          git config user.name "crixly-bot"
+          git config user.email "bot@crixly.org"
+          git add install/releases/*.tgz
+          git commit -m "CI: publish runtime + bundled skills" || echo "No changes to commit"
+          git push
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -52,3 +66,5 @@ jobs:
           path: |
             releases/crixly-runtime-dist.tgz
             releases/crixly-bundled-skills.tgz
+            install/releases/crixly-runtime-dist.tgz
+            install/releases/crixly-bundled-skills.tgz
