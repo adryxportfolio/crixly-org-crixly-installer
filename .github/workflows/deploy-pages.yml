@@ -18,15 +18,112 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - uses: pnpm/action-setup@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ env.PROJECT_NAME }}
-          directory: install
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          version: 10
 
-      # Note: Custom domain binding (install.crixly.org) is usually a one-time UI step.
-      # If you want full automation, we can add a wrangler-based step to call the CF API
-      # to attach the domain + create DNS record, but it requires additional API scopes.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deploy tooling
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm wrangler pages deploy install --project-name=${{ env.PROJECT_NAME }} --branch=${{ env.BRANCH }}
+
+      - name: Ensure custom domain + DNS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          node - <<'NODE'
+          const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+          const token = process.env.CLOUDFLARE_API_TOKEN;
+          const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+          const project = process.env.PROJECT_NAME;
+          const domain = 'install.crixly.org';
+
+          async function cf(path, init={}) {
+            const res = await fetch('https://api.cloudflare.com/client/v4' + path, {
+              ...init,
+              headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json',
+                ...(init.headers || {}),
+              }
+            });
+            const data = await res.json();
+            if (!data.success) {
+              throw new Error(path + ' -> ' + JSON.stringify(data.errors || data, null, 2));
+            }
+            return data;
+          }
+
+          async function ensureDomain() {
+            // Attach custom domain to Pages project
+            // POST /accounts/:account_id/pages/projects/:project_name/domains
+            try {
+              await cf(`/accounts/${accountId}/pages/projects/${project}/domains`, {
+                method: 'POST',
+                body: JSON.stringify({ name: domain })
+              });
+              console.log('Attached domain to Pages project:', domain);
+            } catch (e) {
+              // If already exists, Cloudflare returns an error; treat as ok.
+              console.log('Domain attach (possibly already attached):', e.message);
+            }
+          }
+
+          async function ensureDnsCname() {
+            // Create/ensure CNAME install -> <project>.pages.dev
+            const target = `${project}.pages.dev`;
+
+            const list = await cf(`/zones/${zoneId}/dns_records?type=CNAME&name=${encodeURIComponent(domain)}`);
+            const rec = list.result?.[0];
+            if (!rec) {
+              await cf(`/zones/${zoneId}/dns_records`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  type: 'CNAME',
+                  name: 'install',
+                  content: target,
+                  ttl: 1,
+                  proxied: true
+                })
+              });
+              console.log('Created DNS CNAME install ->', target);
+              return;
+            }
+            if (rec.content !== target || rec.proxied !== true) {
+              await cf(`/zones/${zoneId}/dns_records/${rec.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                  type: 'CNAME',
+                  name: rec.name,
+                  content: target,
+                  ttl: 1,
+                  proxied: true
+                })
+              });
+              console.log('Updated DNS CNAME install ->', target);
+            } else {
+              console.log('DNS CNAME already correct');
+            }
+          }
+
+          (async () => {
+            if (!accountId || !token || !zoneId) throw new Error('Missing Cloudflare env');
+            await ensureDomain();
+            await ensureDnsCname();
+          })().catch((e) => {
+            console.error(e);
+            process.exit(1);
+          });
+          NODE

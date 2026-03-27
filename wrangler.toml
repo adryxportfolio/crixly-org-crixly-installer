@@ -1,0 +1,4 @@
+name = "crixly-install"
+compatibility_date = "2026-03-27"
+
+# We deploy static assets from ./install via `wrangler pages deploy install`.
