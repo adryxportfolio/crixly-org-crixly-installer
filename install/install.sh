@@ -40,7 +40,10 @@ if [[ -z "$CRIXLY_SUPABASE_ANON_KEY" ]]; then
   exit 2
 fi
 
-mkdir -p "$PREFIX/tools" "$PREFIX/bin" "$PREFIX/app"
+mkdir -p "$PREFIX/tools" "$PREFIX/bin" "$PREFIX/app" "$PREFIX/workspace"
+
+# Workspace path for Crixly
+export CRIXLY_WORKSPACE="$PREFIX/workspace"
 
 OS="$(uname -s)"
 ARCH="$(uname -m)"
@@ -83,10 +86,28 @@ CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://raw.githubusercontent.com/adryxportfol
 echo "Installing Crixly CLI..."
 "$NPM_BIN" install --prefix "$PREFIX/app" "$CRIXLY_TGZ_URL" >/dev/null
 
+# Install bundled skills
+if [[ -d "$(dirname "$0")/../bundled-skills" ]]; then
+  echo "Installing bundled skills..."
+  mkdir -p "$PREFIX/workspace/skills"
+  cp -R "$(dirname "$0")/../bundled-skills"/* "$PREFIX/workspace/skills/" || true
+fi
+
+# Write default config
+mkdir -p "$PREFIX/app/config"
+cat > "$PREFIX/app/config/crixly.default.json" <<'JSON'
+{
+  "gateway": { "port": 27811, "mode": "local", "bind": "loopback", "auth": { "mode": "token" } },
+  "agents": { "defaults": { "workspace": "${CRIXLY_WORKSPACE}" } }
+}
+JSON
+
 cat > "$PREFIX/bin/crixly" <<EOF
 #!/usr/bin/env bash
 export CRIXLY_SUPABASE_URL="$CRIXLY_SUPABASE_URL"
 export CRIXLY_SUPABASE_ANON_KEY="$CRIXLY_SUPABASE_ANON_KEY"
+export CRIXLY_WORKSPACE="$PREFIX/workspace"
+# Underlying runtime will read this config path once we bundle runtime.
 exec "$NODE_BIN" "$PREFIX/app/node_modules/crixly-cli/dist/index.js" "$@"
 EOF
 chmod +x "$PREFIX/bin/crixly"
@@ -94,7 +115,11 @@ chmod +x "$PREFIX/bin/crixly"
 echo "Installed. Add to PATH:"
 echo "  export PATH=\"$PREFIX/bin:\$PATH\""
 
+echo "Next steps:"
+echo "  crixly activate <LICENSE_KEY>"
+echo "  crixly run"
+echo "Dashboard: http://127.0.0.1:27811"
+
 if [[ "$NO_ONBOARD" -eq 0 ]]; then
-  echo "Running: crixly onboard"
-  "$PREFIX/bin/crixly" onboard
+  echo "Running: crixly activate <LICENSE_KEY> (required)"
 fi

@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "product": "crixly"
+  },
+  "gateway": {
+    "port": 27811,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token"
+    }
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "${CRIXLY_WORKSPACE}"
+    }
+  },
+  "tools": {
+    "profile": "coding"
+  },
+  "plugins": {
+    "allow": [
+      "openclaw-web-search"
+    ],
+    "entries": {
+      "openclaw-web-search": {
+        "enabled": true
+      }
+    }
+  }
+}

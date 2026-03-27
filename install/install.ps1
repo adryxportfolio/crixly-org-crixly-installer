@@ -17,7 +17,9 @@ $NodeVersion = if ($env:CRIXLY_NODE_VERSION) { $env:CRIXLY_NODE_VERSION } else {
 $Tools = Join-Path $Prefix 'tools'
 $Bin = Join-Path $Prefix 'bin'
 $App = Join-Path $Prefix 'app'
-New-Item -ItemType Directory -Force -Path $Tools,$Bin,$App | Out-Null
+$Workspace = Join-Path $Prefix 'workspace'
+New-Item -ItemType Directory -Force -Path $Tools,$Bin,$App,$Workspace | Out-Null
+$env:CRIXLY_WORKSPACE = $Workspace
 
 $Arch = if ([Environment]::Is64BitOperatingSystem) { 'x64' } else { throw 'Unsupported arch' }
 $NodeDir = Join-Path $Tools "node-v$NodeVersion"
@@ -45,17 +47,26 @@ $CrixlyTgzUrl = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https:/
 Write-Host 'Installing Crixly CLI...'
 & $NpmCmd install --prefix $App $CrixlyTgzUrl | Out-Null
 
+# Install bundled skills if present alongside this script in repo deployments
+$BundledSkills = Join-Path (Split-Path $PSScriptRoot -Parent) 'bundled-skills'
+if (Test-Path $BundledSkills) {
+  Write-Host 'Installing bundled skills...'
+  $SkillsDir = Join-Path $Workspace 'skills'
+  New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
+  Copy-Item -Recurse -Force (Join-Path $BundledSkills '*') $SkillsDir
+}
+
 $CrixlyCmd = Join-Path $Bin 'crixly.cmd'
 @"
 @echo off
 set CRIXLY_SUPABASE_URL=$SupabaseUrl
 set CRIXLY_SUPABASE_ANON_KEY=$AnonKey
+set CRIXLY_WORKSPACE=$Workspace
 "$NodeExe" "$App\node_modules\crixly-cli\dist\index.js" %*
 "@ | Set-Content -Encoding ASCII -Path $CrixlyCmd
 
 Write-Host "Installed to $Prefix"
-Write-Host "Run: $CrixlyCmd onboard"
-
-if (-not $NoOnboard) {
-  & $CrixlyCmd onboard
-}
+Write-Host "Next steps:"
+Write-Host "  $CrixlyCmd activate <LICENSE_KEY>"
+Write-Host "  $CrixlyCmd run"
+Write-Host "Dashboard: http://127.0.0.1:27811"
