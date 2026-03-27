@@ -56,17 +56,19 @@ async function validateLicenseOnline(key: string, fingerprint: string) {
 
   const supabase = createClient(url, anonKey, { auth: { persistSession: false } })
 
-  // You will implement this RPC (or Edge Function) in your Supabase project.
-  const { data, error } = await supabase.rpc('crixly_validate_license', { p_key: key, p_fingerprint: fingerprint })
+  const { data, error } = await supabase.functions.invoke('crixly-validate', {
+    body: { key, fingerprint },
+  })
+
   if (error) throw new Error(`License validation failed: ${error.message}`)
-  // Expect: { ok: boolean, next_check_seconds: number, message?: string }
-  if (!data?.ok) {
-    const msg = data?.message || 'License invalid'
+  if (!(data as any)?.ok) {
+    const msg = (data as any)?.message || 'License invalid'
     const err = new Error(msg)
     ;(err as any).code = 'LICENSE_INVALID'
     throw err
   }
-  const nextCheckSeconds = Number(data?.next_check_seconds ?? 3600)
+
+  const nextCheckSeconds = Number((data as any)?.next_check_seconds ?? 3600)
   return { nextCheckSeconds }
 }
 

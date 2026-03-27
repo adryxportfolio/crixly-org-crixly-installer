@@ -1,0 +1,6 @@
+# Supabase project config (for CI deploy)
+
+project_id = "zwlknecauwiqmmpxyezt"
+
+[functions.crixly-validate]
+verify_jwt = false
