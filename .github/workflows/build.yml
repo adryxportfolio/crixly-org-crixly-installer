@@ -35,12 +35,12 @@ jobs:
         run: |
           set -e
           TGZ=$(ls -1 releases/*.tgz | head -n 1)
-          cp "$TGZ" releases/crixly-cli-latest.tgz
+          cp "$TGZ" releases/crixlyctl-cli-latest.tgz
 
       - name: Copy into Pages releases directory
         run: |
           mkdir -p install/releases
-          cp releases/crixly-cli-latest.tgz install/releases/crixly-cli-latest.tgz
+          cp releases/crixlyctl-cli-latest.tgz install/releases/crixlyctl-cli-latest.tgz
 
       - name: Commit release artifacts
         run: |
