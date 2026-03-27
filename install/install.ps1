@@ -41,20 +41,34 @@ if (-not (Test-Path $NodeExe)) {
 }
 
 $CrixlyTgzUrl = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/releases/crixly-cli-latest.tgz' }
-# When Cloudflare Pages is live, you can override with:
-# $env:CRIXLY_TGZ_URL = 'https://install.crixly.org/releases/crixly-cli-latest.tgz'
 
 Write-Host 'Installing Crixly CLI...'
 & $NpmCmd install --prefix $App $CrixlyTgzUrl | Out-Null
 
-# Install bundled skills if present alongside this script in repo deployments
-$BundledSkills = Join-Path (Split-Path $PSScriptRoot -Parent) 'bundled-skills'
-if (Test-Path $BundledSkills) {
-  Write-Host 'Installing bundled skills...'
-  $SkillsDir = Join-Path $Workspace 'skills'
-  New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
-  Copy-Item -Recurse -Force (Join-Path $BundledSkills '*') $SkillsDir
-}
+# Install runtime bundle (dist + entrypoint)
+$RuntimeTgzUrl = if ($env:CRIXLY_RUNTIME_TGZ_URL) { $env:CRIXLY_RUNTIME_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-runtime-dist.tgz' }
+Write-Host 'Installing Crixly runtime...'
+$TmpRt = Join-Path $env:TEMP ([Guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $TmpRt | Out-Null
+$RuntimeTgz = Join-Path $TmpRt 'runtime.tgz'
+Invoke-WebRequest -UseBasicParsing -Uri $RuntimeTgzUrl -OutFile $RuntimeTgz
+$RuntimeDir = Join-Path $Prefix 'runtime'
+New-Item -ItemType Directory -Force -Path $RuntimeDir | Out-Null
+& tar -xzf $RuntimeTgz -C $RuntimeDir
+Remove-Item -Recurse -Force $TmpRt
+
+# Install bundled skills (from hosted tgz)
+$SkillsTgzUrl = if ($env:CRIXLY_SKILLS_TGZ_URL) { $env:CRIXLY_SKILLS_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-bundled-skills.tgz' }
+Write-Host 'Installing bundled skills...'
+$SkillsDir = Join-Path $Workspace 'skills'
+New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
+$Tmp = Join-Path $env:TEMP ([Guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Force -Path $Tmp | Out-Null
+$SkillsTgz = Join-Path $Tmp 'skills.tgz'
+Invoke-WebRequest -UseBasicParsing -Uri $SkillsTgzUrl -OutFile $SkillsTgz
+# tar is available on modern Windows; fallback could be added later
+& tar -xzf $SkillsTgz -C $SkillsDir
+Remove-Item -Recurse -Force $Tmp
 
 $CrixlyCmd = Join-Path $Bin 'crixly.cmd'
 @"
@@ -62,6 +76,7 @@ $CrixlyCmd = Join-Path $Bin 'crixly.cmd'
 set CRIXLY_SUPABASE_URL=$SupabaseUrl
 set CRIXLY_SUPABASE_ANON_KEY=$AnonKey
 set CRIXLY_WORKSPACE=$Workspace
+set CRIXLY_RUNTIME_ENTRY=$Prefix\runtime\crixly.mjs
 "$NodeExe" "$App\node_modules\crixly-cli\dist\index.js" %*
 "@ | Set-Content -Encoding ASCII -Path $CrixlyCmd
 

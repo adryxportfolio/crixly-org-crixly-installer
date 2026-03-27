@@ -106,9 +106,12 @@ async function ensureLicensed() {
 }
 
 async function runUnderlyingOpenClaw(args: string[]) {
-  // Underlying runtime command. In distribution we will provide a bundled runtime and set CRIXLY_OPENCLAW_BIN.
-  const bin = process.env.CRIXLY_OPENCLAW_BIN || 'openclaw'
-  const child = execa(bin, args, { stdio: 'inherit' })
+  // Underlying runtime entry. In distribution we bundle the runtime entrypoint (crixly.mjs).
+  const entry = process.env.CRIXLY_RUNTIME_ENTRY
+  if (!entry) {
+    throw new Error('Missing CRIXLY_RUNTIME_ENTRY (path to bundled runtime entrypoint)')
+  }
+  const child = execa(process.execPath, [entry, ...args], { stdio: 'inherit' })
   await child
 }
 

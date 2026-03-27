@@ -86,12 +86,23 @@ CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://raw.githubusercontent.com/adryxportfol
 echo "Installing Crixly CLI..."
 "$NPM_BIN" install --prefix "$PREFIX/app" "$CRIXLY_TGZ_URL" >/dev/null
 
-# Install bundled skills
-if [[ -d "$(dirname "$0")/../bundled-skills" ]]; then
-  echo "Installing bundled skills..."
-  mkdir -p "$PREFIX/workspace/skills"
-  cp -R "$(dirname "$0")/../bundled-skills"/* "$PREFIX/workspace/skills/" || true
-fi
+# Install bundled skills (from hosted tgz)
+SKILLS_TGZ_URL="${CRIXLY_SKILLS_TGZ_URL:-https://install.crixly.org/releases/crixly-bundled-skills.tgz}"
+echo "Installing bundled skills..."
+mkdir -p "$PREFIX/workspace/skills"
+TMP_SKILLS="$(mktemp -d)"
+curl -fsSL "$SKILLS_TGZ_URL" -o "$TMP_SKILLS/skills.tgz"
+tar -xzf "$TMP_SKILLS/skills.tgz" -C "$PREFIX/workspace/skills"
+rm -rf "$TMP_SKILLS"
+
+# Install runtime bundle (dist + entrypoint)
+RUNTIME_TGZ_URL="${CRIXLY_RUNTIME_TGZ_URL:-https://install.crixly.org/releases/crixly-runtime-dist.tgz}"
+echo "Installing Crixly runtime..."
+TMP_RT="$(mktemp -d)"
+curl -fsSL "$RUNTIME_TGZ_URL" -o "$TMP_RT/runtime.tgz"
+mkdir -p "$PREFIX/runtime"
+tar -xzf "$TMP_RT/runtime.tgz" -C "$PREFIX/runtime"
+rm -rf "$TMP_RT"
 
 # Write default config
 mkdir -p "$PREFIX/app/config"
@@ -107,7 +118,7 @@ cat > "$PREFIX/bin/crixly" <<EOF
 export CRIXLY_SUPABASE_URL="$CRIXLY_SUPABASE_URL"
 export CRIXLY_SUPABASE_ANON_KEY="$CRIXLY_SUPABASE_ANON_KEY"
 export CRIXLY_WORKSPACE="$PREFIX/workspace"
-# Underlying runtime will read this config path once we bundle runtime.
+export CRIXLY_RUNTIME_ENTRY="$PREFIX/runtime/crixly.mjs"
 exec "$NODE_BIN" "$PREFIX/app/node_modules/crixly-cli/dist/index.js" "$@"
 EOF
 chmod +x "$PREFIX/bin/crixly"
