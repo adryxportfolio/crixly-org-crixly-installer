@@ -74,7 +74,12 @@ fi
 
 # Install Crixly CLI from a packaged tarball URL (placeholder for now)
 # TODO: replace with your hosted release artifact URL.
-CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://install.crixly.org/releases/crixly-cli-latest.tgz}"
+CRIXLY_TGZ_URL_PRIMARY="${CRIXLY_TGZ_URL:-https://install.crixly.org/releases/crixlyctl-cli-latest.tgz}"
+CRIXLY_TGZ_URL_FALLBACK="https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixlyctl-cli-latest.tgz"
+CRIXLY_TGZ_URL="$CRIXLY_TGZ_URL_PRIMARY"
+if ! curl -fsSI "$CRIXLY_TGZ_URL_PRIMARY" >/dev/null 2>&1; then
+  CRIXLY_TGZ_URL="$CRIXLY_TGZ_URL_FALLBACK"
+fi
 # When Cloudflare Pages is live, you can override with:
 # CRIXLY_TGZ_URL=https://install.crixly.org/releases/crixly-cli-latest.tgz
 
@@ -82,7 +87,12 @@ echo "Installing Crixly CLI..."
 "$NPM_BIN" install --prefix "$PREFIX/app" "$CRIXLY_TGZ_URL" >/dev/null
 
 # Install bundled skills (from hosted tgz)
-SKILLS_TGZ_URL="${CRIXLY_SKILLS_TGZ_URL:-https://install.crixly.org/releases/crixly-bundled-skills.tgz}"
+SKILLS_TGZ_URL_PRIMARY="${CRIXLY_SKILLS_TGZ_URL:-https://install.crixly.org/releases/crixly-bundled-skills.tgz}"
+SKILLS_TGZ_URL_FALLBACK="https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixly-bundled-skills.tgz"
+SKILLS_TGZ_URL="$SKILLS_TGZ_URL_PRIMARY"
+if ! curl -fsSI "$SKILLS_TGZ_URL_PRIMARY" >/dev/null 2>&1; then
+  SKILLS_TGZ_URL="$SKILLS_TGZ_URL_FALLBACK"
+fi
 echo "Installing bundled skills..."
 mkdir -p "$PREFIX/workspace/skills"
 TMP_SKILLS="$(mktemp -d)"
@@ -91,7 +101,12 @@ tar -xzf "$TMP_SKILLS/skills.tgz" -C "$PREFIX/workspace/skills"
 rm -rf "$TMP_SKILLS"
 
 # Install runtime bundle (dist + entrypoint)
-RUNTIME_TGZ_URL="${CRIXLY_RUNTIME_TGZ_URL:-https://install.crixly.org/releases/crixly-runtime-dist.tgz}"
+RUNTIME_TGZ_URL_PRIMARY="${CRIXLY_RUNTIME_TGZ_URL:-https://install.crixly.org/releases/crixly-runtime-dist.tgz}"
+RUNTIME_TGZ_URL_FALLBACK="https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixly-runtime-dist.tgz"
+RUNTIME_TGZ_URL="$RUNTIME_TGZ_URL_PRIMARY"
+if ! curl -fsSI "$RUNTIME_TGZ_URL_PRIMARY" >/dev/null 2>&1; then
+  RUNTIME_TGZ_URL="$RUNTIME_TGZ_URL_FALLBACK"
+fi
 echo "Installing Crixly runtime..."
 TMP_RT="$(mktemp -d)"
 curl -fsSL "$RUNTIME_TGZ_URL" -o "$TMP_RT/runtime.tgz"

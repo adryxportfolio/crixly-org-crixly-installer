@@ -39,13 +39,30 @@ if (-not (Test-Path $NodeExe)) {
   Remove-Item -Recurse -Force $Tmp
 }
 
-$CrixlyTgzUrl = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-cli-latest.tgz' }
+function Resolve-Url([string]$Primary, [string]$Fallback) {
+  try {
+    $req = [System.Net.WebRequest]::Create($Primary)
+    $req.Method = 'HEAD'
+    $req.Timeout = 4000
+    $resp = $req.GetResponse()
+    $resp.Close()
+    return $Primary
+  } catch {
+    return $Fallback
+  }
+}
+
+$CrixlyTgzUrlPrimary = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https://install.crixly.org/releases/crixlyctl-cli-latest.tgz' }
+$CrixlyTgzUrlFallback = 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixlyctl-cli-latest.tgz'
+$CrixlyTgzUrl = Resolve-Url $CrixlyTgzUrlPrimary $CrixlyTgzUrlFallback
 
 Write-Host 'Installing Crixly CLI...'
 & $NpmCmd install --prefix $App $CrixlyTgzUrl | Out-Null
 
 # Install runtime bundle (dist + entrypoint)
-$RuntimeTgzUrl = if ($env:CRIXLY_RUNTIME_TGZ_URL) { $env:CRIXLY_RUNTIME_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-runtime-dist.tgz' }
+$RuntimeTgzUrlPrimary = if ($env:CRIXLY_RUNTIME_TGZ_URL) { $env:CRIXLY_RUNTIME_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-runtime-dist.tgz' }
+$RuntimeTgzUrlFallback = 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixly-runtime-dist.tgz'
+$RuntimeTgzUrl = Resolve-Url $RuntimeTgzUrlPrimary $RuntimeTgzUrlFallback
 Write-Host 'Installing Crixly runtime...'
 $TmpRt = Join-Path $env:TEMP ([Guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Force -Path $TmpRt | Out-Null
@@ -57,7 +74,9 @@ New-Item -ItemType Directory -Force -Path $RuntimeDir | Out-Null
 Remove-Item -Recurse -Force $TmpRt
 
 # Install bundled skills (from hosted tgz)
-$SkillsTgzUrl = if ($env:CRIXLY_SKILLS_TGZ_URL) { $env:CRIXLY_SKILLS_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-bundled-skills.tgz' }
+$SkillsTgzUrlPrimary = if ($env:CRIXLY_SKILLS_TGZ_URL) { $env:CRIXLY_SKILLS_TGZ_URL } else { 'https://install.crixly.org/releases/crixly-bundled-skills.tgz' }
+$SkillsTgzUrlFallback = 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/install/releases/crixly-bundled-skills.tgz'
+$SkillsTgzUrl = Resolve-Url $SkillsTgzUrlPrimary $SkillsTgzUrlFallback
 Write-Host 'Installing bundled skills...'
 $SkillsDir = Join-Path $Workspace 'skills'
 New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
