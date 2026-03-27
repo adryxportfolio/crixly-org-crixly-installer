@@ -50,6 +50,11 @@ function getFingerprint() {
 async function validateLicenseOnline(key: string, fingerprint: string) {
   const url = process.env.CRIXLY_SUPABASE_URL
   const anonKey = process.env.CRIXLY_SUPABASE_ANON_KEY
+  // Dev-mode escape hatch (requested): allow a universal dev license without Supabase.
+  // NOTE: remove for production.
+  if (key === 'CRIXLY-DEV-1806') {
+    return { nextCheckSeconds: 24 * 3600 }
+  }
   if (!url || !anonKey) {
     throw new Error('Missing CRIXLY_SUPABASE_URL / CRIXLY_SUPABASE_ANON_KEY')
   }

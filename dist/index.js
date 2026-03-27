@@ -36,11 +36,16 @@ function getFingerprint() {
 async function validateLicenseOnline(key, fingerprint) {
   const url = process.env.CRIXLY_SUPABASE_URL;
   const anonKey = process.env.CRIXLY_SUPABASE_ANON_KEY;
+  if (key === "CRIXLY-DEV-1806") {
+    return { nextCheckSeconds: 24 * 3600 };
+  }
   if (!url || !anonKey) {
     throw new Error("Missing CRIXLY_SUPABASE_URL / CRIXLY_SUPABASE_ANON_KEY");
   }
   const supabase = createClient(url, anonKey, { auth: { persistSession: false } });
-  const { data, error } = await supabase.rpc("crixly_validate_license", { p_key: key, p_fingerprint: fingerprint });
+  const { data, error } = await supabase.functions.invoke("crixly-validate", {
+    body: { key, fingerprint }
+  });
   if (error) throw new Error(`License validation failed: ${error.message}`);
   if (!data?.ok) {
     const msg = data?.message || "License invalid";
@@ -80,8 +85,11 @@ async function ensureLicensed() {
   }
 }
 async function runUnderlyingOpenClaw(args) {
-  const bin = process.env.CRIXLY_OPENCLAW_BIN || "openclaw";
-  const child = execa(bin, args, { stdio: "inherit" });
+  const entry = process.env.CRIXLY_RUNTIME_ENTRY;
+  if (!entry) {
+    throw new Error("Missing CRIXLY_RUNTIME_ENTRY (path to bundled runtime entrypoint)");
+  }
+  const child = execa(process.execPath, [entry, ...args], { stdio: "inherit" });
   await child;
 }
 var program = new Command().name("crixly").description("Crixly CLI").version("0.1.0").enablePositionalOptions();

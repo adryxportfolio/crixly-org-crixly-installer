@@ -8,8 +8,7 @@ PREFIX_DEFAULT="$HOME/.crixly"
 PREFIX="${CRIXLY_PREFIX:-$PREFIX_DEFAULT}"
 NODE_VERSION="${CRIXLY_NODE_VERSION:-22.22.0}"
 
-CRIXLY_SUPABASE_URL_DEFAULT="https://zwlknecauwiqmmpxyezt.supabase.co"
-CRIXLY_SUPABASE_URL="${CRIXLY_SUPABASE_URL:-$CRIXLY_SUPABASE_URL_DEFAULT}"
+CRIXLY_SUPABASE_URL="${CRIXLY_SUPABASE_URL:-}"
 CRIXLY_SUPABASE_ANON_KEY="${CRIXLY_SUPABASE_ANON_KEY:-}"
 
 usage() {
@@ -35,10 +34,6 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$CRIXLY_SUPABASE_ANON_KEY" ]]; then
-  echo "CRIXLY_SUPABASE_ANON_KEY is required." >&2
-  exit 2
-fi
 
 mkdir -p "$PREFIX/tools" "$PREFIX/bin" "$PREFIX/app" "$PREFIX/workspace"
 

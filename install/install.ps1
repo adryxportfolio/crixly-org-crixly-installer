@@ -8,9 +8,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$SupabaseUrl = if ($env:CRIXLY_SUPABASE_URL) { $env:CRIXLY_SUPABASE_URL } else { 'https://zwlknecauwiqmmpxyezt.supabase.co' }
-$AnonKey = $env:CRIXLY_SUPABASE_ANON_KEY
-if (-not $AnonKey) { throw 'CRIXLY_SUPABASE_ANON_KEY is required.' }
+$SupabaseUrl = if ($env:CRIXLY_SUPABASE_URL) { $env:CRIXLY_SUPABASE_URL } else { '' }
+$AnonKey = if ($env:CRIXLY_SUPABASE_ANON_KEY) { $env:CRIXLY_SUPABASE_ANON_KEY } else { '' }
 
 $NodeVersion = if ($env:CRIXLY_NODE_VERSION) { $env:CRIXLY_NODE_VERSION } else { '22.22.0' }
 
