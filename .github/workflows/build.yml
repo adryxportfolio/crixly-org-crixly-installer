@@ -1,0 +1,46 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Pack tgz
+        run: |
+          pnpm pack --pack-destination ./releases
+          ls -la releases
+
+      - name: Update latest
+        run: |
+          set -e
+          TGZ=$(ls -1 releases/*.tgz | head -n 1)
+          cp "$TGZ" releases/crixly-cli-latest.tgz
+
+      - name: Commit release artifacts
+        run: |
+          git config user.name "crixly-bot"
+          git config user.email "bot@crixly.org"
+          git add releases/*.tgz
+          git commit -m "CI: update crixly-cli tgz" || echo "No changes to commit"
+          git push

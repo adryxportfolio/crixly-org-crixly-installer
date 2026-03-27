@@ -76,12 +76,7 @@ fi
 
 # Install Crixly CLI from a packaged tarball URL (placeholder for now)
 # TODO: replace with your hosted release artifact URL.
-CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-}"
-if [[ -z "$CRIXLY_TGZ_URL" ]]; then
-  echo "CRIXLY_TGZ_URL is not set (URL to crixly-cli tgz release)." >&2
-  echo "For now, build/publish crixly-cli and set CRIXLY_TGZ_URL." >&2
-  exit 2
-fi
+CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/releases/crixly-cli-latest.tgz}"
 
 echo "Installing Crixly CLI..."
 "$NPM_BIN" install --prefix "$PREFIX/app" "$CRIXLY_TGZ_URL" >/dev/null

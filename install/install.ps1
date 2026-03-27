@@ -38,10 +38,7 @@ if (-not (Test-Path $NodeExe)) {
   Remove-Item -Recurse -Force $Tmp
 }
 
-$CrixlyTgzUrl = $env:CRIXLY_TGZ_URL
-if (-not $CrixlyTgzUrl) {
-  throw 'CRIXLY_TGZ_URL is not set (URL to crixly-cli tgz release).'
-}
+$CrixlyTgzUrl = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/releases/crixly-cli-latest.tgz' }
 
 Write-Host 'Installing Crixly CLI...'
 & $NpmCmd install --prefix $App $CrixlyTgzUrl | Out-Null
