@@ -79,7 +79,7 @@ fi
 
 # Install Crixly CLI from a packaged tarball URL (placeholder for now)
 # TODO: replace with your hosted release artifact URL.
-CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/releases/crixly-cli-latest.tgz}"
+CRIXLY_TGZ_URL="${CRIXLY_TGZ_URL:-https://install.crixly.org/releases/crixly-cli-latest.tgz}"
 # When Cloudflare Pages is live, you can override with:
 # CRIXLY_TGZ_URL=https://install.crixly.org/releases/crixly-cli-latest.tgz
 
