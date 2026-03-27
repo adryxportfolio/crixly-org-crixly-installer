@@ -52,21 +52,37 @@ serve(async (req) => {
     return json(403, { ok: false, message: "License expired" });
   }
 
-  // 2) Ensure activation row exists (upsert)
+  // 2) Enforce one-machine activation
   const now = new Date().toISOString();
-  const { error: actErr } = await supabase
+
+  const { data: activation, error: actGetErr } = await supabase
     .from("activations")
-    .upsert(
-      {
+    .select("id,fingerprint")
+    .eq("license_id", license.id)
+    .maybeSingle();
+
+  if (actGetErr) return json(500, { ok: false, message: "Server error" });
+
+  if (!activation) {
+    const { error: actInsErr } = await supabase
+      .from("activations")
+      .insert({
         license_id: license.id,
         fingerprint,
-        last_seen_at: now,
         activated_at: now,
-      },
-      { onConflict: "license_id,fingerprint" },
-    );
-
-  if (actErr) return json(500, { ok: false, message: "Server error" });
+        last_seen_at: now,
+      });
+    if (actInsErr) return json(500, { ok: false, message: "Server error" });
+  } else {
+    if (activation.fingerprint !== fingerprint) {
+      return json(403, { ok: false, message: "License already activated on another machine" });
+    }
+    const { error: actUpdErr } = await supabase
+      .from("activations")
+      .update({ last_seen_at: now })
+      .eq("id", activation.id);
+    if (actUpdErr) return json(500, { ok: false, message: "Server error" });
+  }
 
   // You can tune this; client will cache for this duration.
   return json(200, {
