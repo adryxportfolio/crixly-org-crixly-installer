@@ -3,10 +3,6 @@ name: build-runtime
 on:
   push:
     branches: [ main ]
-    paths:
-      - .github/workflows/build-runtime.yml
-      - bundled-skills/**
-      - RUNTIME_SOURCE.md
   workflow_dispatch:
     inputs:
       ref:
