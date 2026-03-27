@@ -39,6 +39,8 @@ if (-not (Test-Path $NodeExe)) {
 }
 
 $CrixlyTgzUrl = if ($env:CRIXLY_TGZ_URL) { $env:CRIXLY_TGZ_URL } else { 'https://raw.githubusercontent.com/adryxportfolio/crixly-org-crixly-installer/main/releases/crixly-cli-latest.tgz' }
+# When Cloudflare Pages is live, you can override with:
+# $env:CRIXLY_TGZ_URL = 'https://install.crixly.org/releases/crixly-cli-latest.tgz'
 
 Write-Host 'Installing Crixly CLI...'
 & $NpmCmd install --prefix $App $CrixlyTgzUrl | Out-Null

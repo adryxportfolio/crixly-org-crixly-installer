@@ -1,0 +1,32 @@
+name: deploy-pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - install/**
+      - .github/workflows/deploy-pages.yml
+  workflow_dispatch: {}
+
+env:
+  PROJECT_NAME: crixly-install
+  BRANCH: main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ env.PROJECT_NAME }}
+          directory: install
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      # Note: Custom domain binding (install.crixly.org) is usually a one-time UI step.
+      # If you want full automation, we can add a wrangler-based step to call the CF API
+      # to attach the domain + create DNS record, but it requires additional API scopes.
