@@ -108,7 +108,7 @@ cat > "$PREFIX/app/config/crixly.default.json" <<'JSON'
 }
 JSON
 
-cat > "$PREFIX/bin/crixly" <<EOF
+cat > "$PREFIX/bin/crixlyctl" <<EOF
 #!/usr/bin/env bash
 export CRIXLY_SUPABASE_URL="$CRIXLY_SUPABASE_URL"
 export CRIXLY_SUPABASE_ANON_KEY="$CRIXLY_SUPABASE_ANON_KEY"
@@ -116,14 +116,14 @@ export CRIXLY_WORKSPACE="$PREFIX/workspace"
 export CRIXLY_RUNTIME_ENTRY="$PREFIX/runtime/crixly.mjs"
 exec "$NODE_BIN" "$PREFIX/app/node_modules/crixly-cli/dist/index.js" "$@"
 EOF
-chmod +x "$PREFIX/bin/crixly"
+chmod +x "$PREFIX/bin/crixlyctl"
 
 echo "Installed. Add to PATH:"
 echo "  export PATH=\"$PREFIX/bin:\$PATH\""
 
 echo "Next steps:"
-echo "  crixly activate <LICENSE_KEY>"
-echo "  crixly run"
+echo "  crixlyctl activate <LICENSE_KEY>"
+echo "  crixlyctl run"
 echo "Dashboard: http://127.0.0.1:27811"
 
 if [[ "$NO_ONBOARD" -eq 0 ]]; then

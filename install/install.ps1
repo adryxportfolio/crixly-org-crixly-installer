@@ -69,7 +69,7 @@ Invoke-WebRequest -UseBasicParsing -Uri $SkillsTgzUrl -OutFile $SkillsTgz
 & tar -xzf $SkillsTgz -C $SkillsDir
 Remove-Item -Recurse -Force $Tmp
 
-$CrixlyCmd = Join-Path $Bin 'crixly.cmd'
+$CrixlyCtlCmd = Join-Path $Bin 'crixlyctl.cmd'
 @"
 @echo off
 set CRIXLY_SUPABASE_URL=$SupabaseUrl
@@ -77,10 +77,10 @@ set CRIXLY_SUPABASE_ANON_KEY=$AnonKey
 set CRIXLY_WORKSPACE=$Workspace
 set CRIXLY_RUNTIME_ENTRY=$Prefix\runtime\crixly.mjs
 "$NodeExe" "$App\node_modules\crixly-cli\dist\index.js" %*
-"@ | Set-Content -Encoding ASCII -Path $CrixlyCmd
+"@ | Set-Content -Encoding ASCII -Path $CrixlyCtlCmd
 
 Write-Host "Installed to $Prefix"
 Write-Host "Next steps:"
-Write-Host "  $CrixlyCmd activate <LICENSE_KEY>"
-Write-Host "  $CrixlyCmd run"
+Write-Host "  $CrixlyCtlCmd activate <LICENSE_KEY>"
+Write-Host "  $CrixlyCtlCmd run"
 Write-Host "Dashboard: http://127.0.0.1:27811"

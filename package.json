@@ -4,7 +4,7 @@
   "description": "Crixly CLI wrapper (white-labeled OpenClaw) with license gating",
   "type": "module",
   "bin": {
-    "crixly": "./dist/index.js"
+    "crixlyctl": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "scripts": {

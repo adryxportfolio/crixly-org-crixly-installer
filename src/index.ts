@@ -121,7 +121,7 @@ async function runUnderlyingOpenClaw(args: string[]) {
 }
 
 const program = new Command()
-  .name('crixly')
+  .name('crixlyctl')
   .description('Crixly CLI')
   .version('0.1.0')
   .enablePositionalOptions()
