@@ -1,6 +1,12 @@
 name: build-runtime
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - .github/workflows/build-runtime.yml
+      - bundled-skills/**
+      - RUNTIME_SOURCE.md
   workflow_dispatch:
     inputs:
       ref:
@@ -19,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: frameflowmedia4partners-rgb/CrixlyFinalAgentic
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.ref || 'main' }}
           path: runtime
 
       - uses: pnpm/action-setup@v4
