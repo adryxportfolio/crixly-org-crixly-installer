@@ -1,0 +1,50 @@
+name: build-runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Runtime git ref (commit SHA or tag)"
+        required: true
+        default: "main"
+
+jobs:
+  build_runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout installer repo
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned runtime
+        uses: actions/checkout@v4
+        with:
+          repository: frameflowmedia4partners-rgb/CrixlyFinalAgentic
+          ref: ${{ inputs.ref }}
+          path: runtime
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: runtime/pnpm-lock.yaml
+
+      - name: Install + build runtime
+        working-directory: runtime
+        run: |
+          pnpm install
+          pnpm -r build
+
+      - name: Package runtime dist
+        run: |
+          mkdir -p releases
+          tar -czf releases/crixly-runtime-dist.tgz -C runtime dist crixly.mjs package.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crixly-runtime-dist
+          path: releases/crixly-runtime-dist.tgz
